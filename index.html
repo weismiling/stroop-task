@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Stroop Task</title>
+  <!-- jsPsych のCDN -->
+  <script src="https://unpkg.com/jspsych@7.3.0"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.2"></script>
+  <style>
+    body { text-align: center; font-size: 2em; margin-top: 100px; }
+  </style>
+</head>
+<body>
+  <script>
+    const timeline = [];
+
+    // 説明画面
+    timeline.push({
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: `
+        <p>画面に色の名前が表示されます。</p>
+        <p>文字の色に対応するキーを押してください：</p>
+        <p>赤: Fキー｜青: Jキー</p>
+        <p>キーを押すと開始します。</p>`,
+      choices: "ALL_KEYS"
+    });
+
+    // 刺激リスト
+    const stimuli = [
+      { stimulus: "<span style='color:red;'>赤</span>", correct_response: 'f' },     // 一致
+      { stimulus: "<span style='color:blue;'>青</span>", correct_response: 'j' },    // 一致
+      { stimulus: "<span style='color:red;'>青</span>", correct_response: 'f' },     // 不一致
+      { stimulus: "<span style='color:blue;'>赤</span>", correct_response: 'j' }     // 不一致
+    ];
+
+    // 試行の生成
+    const trials = stimuli.map(s => ({
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: s.stimulus,
+      choices: ['f', 'j'],
+      data: { correct_response: s.correct_response },
+      on_finish: data => {
+        data.correct = jsPsych.pluginAPI.compareKeys(data.response, data.correct_response);
+      }
+    }));
+
+    timeline.push(...trials);
+
+    // 結果表示
+    timeline.push({
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: function() {
+        const correct_trials = jsPsych.data.get().filter({ correct: true }).count();
+        const total_trials = jsPsych.data.get().filter({ correct: true }).count() + jsPsych.data.get().filter({ correct: false }).count();
+        return `<p>終了しました。正解数: ${correct_trials}/${total_trials}</p><p>Fキーで終了</p>`;
+      },
+      choices: ['f']
+    });
+
+    jsPsych.run(timeline);
+  </script>
+</body>
+</html>
